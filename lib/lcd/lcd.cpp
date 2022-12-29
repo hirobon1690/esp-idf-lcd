@@ -1,13 +1,7 @@
 #include "lcd.h"
+#include "i2c.h"
 
-#include <Wire.h>
-#include <arduino.h>
 
-#define LCD_ADRS 0x3E
-#define ONELINE 1
-#define TWOLINES 0
-#define DATA 0x40
-#define CMD 0x00
 
 const int Custom_Char5x8[] = {
     // 0x00, 通常は使わない
@@ -94,12 +88,12 @@ const int Custom_Char5x8[] = {
 
 LCD::LCD() {}
 
-void LCD::write(byte command, byte t_data) {
-  Wire.beginTransmission(LCD_ADRS);
-  Wire.write(command);
-  Wire.write(t_data);
-  Wire.endTransmission();
-  delay(1);
+void LCD::write(uint8_t command, uint8_t t_data) {
+  uint8_t cmd[2];
+  cmd[0] = command;
+  cmd[1] = t_data;
+  i2c.write(LCD_ADRS,cmd,2);
+  vTaskDelay(1/portTICK_PERIOD_MS);
 }
 
 void LCD::print(const char* c, int line) {
@@ -116,13 +110,13 @@ void LCD::print(const char* c, int line) {
 
 void LCD::clr() {
   this->write(CMD, 0x01);
-  delay(2);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0x02);
-  delay(2);
+  vTaskDelay(1/portTICK_PERIOD_MS);
 }
 
 void LCD::init(int num, int contrast) {
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   if (num == 1) {
     this->write(CMD, 0b00111100);
   } else {
@@ -133,39 +127,39 @@ void LCD::init(int num, int contrast) {
   } else {
     this->write(CMD, 0b00111001);  // Function Set
   }
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   if (num == 1) {
     this->write(CMD, 0b00111101);
   } else {
     this->write(CMD, 0b00111001);  // Function Set
   }
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0x14);  // Internal OSC Freq
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0b01110000 | (contrast & 0b001111));  // Contrast Set
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0b01010100 | (contrast >> 4));  // P/I/C Control
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0x6C);  // Follower Control
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   if (num == 1) {
     this->write(CMD, 0b00111100);
   } else {
     this->write(CMD, 0b00111000);  // Function Set
   }
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0x01);  // Clear Display
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0x0C);  // On/Off Control
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   this->write(CMD, 0x40);  // Set CGRAM
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
   int i;
   for (i = 0; i < 64; i++) {
     this->write(DATA, Custom_Char5x8[i]);  // Set CGRAM
-    delay(1);
+    vTaskDelay(1/portTICK_PERIOD_MS);
   }
-  delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
 }
 
 void LCD::printf(int line, const char* format, ...) {
